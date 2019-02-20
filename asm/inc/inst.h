@@ -9,7 +9,12 @@ static const uint16_t IDUOT_REG_BITS = 4;
 
 // IDUOT_IMM_MAX is the maximum immediate value for load immediate
 // instructions.
-static const uint16_t IDUOT_IMM_MAX = 0b1111;
+static const uint16_t IDUOT_IMM_BITS = 4;
+static const uint16_t IDUOT_IMM_MAX = (1 << (IDUOT_IMM_BITS)) - 1;
+
+// IDUOT_SIG_MAX is the maximum signal number that can be sent.
+static const uint16_t IDUOT_SIG_BITS = 3;
+static const uint16_t IDUOT_SIG_MAX = (1 << (IDUOT_SIG_BITS)) - 1;
 
 // inst_enc_t is an encoded instruction. For convenience, we're encoding to
 // uint16_t's and packing them to uint12_t's later on. This makes manipulation
@@ -114,6 +119,7 @@ void inst_reg2_encode(inst_reg2_t op, inst_enc_t *enc);
 // inst_load_imm_t is used for the INST_LOAD_IMM. The immediate value is
 // limited to 4 bits. This corresponds to INST_FORMAT_LOAD_IMM.
 typedef struct {
+	reg_id_t reg;
 	uint8_t imm;
 }
 inst_load_imm_t;
@@ -125,7 +131,7 @@ void inst_load_imm_encode(inst_load_imm_t op, inst_enc_t *enc);
 // signal number) is limited to 3 bits. This corresponds to INST_FORMAT_SIGNAL.
 typedef struct {
 	reg_id_t reg;
-	uint8_t imm; 
+	uint8_t signal; 
 }
 inst_signal_t;
 
@@ -144,3 +150,6 @@ typedef struct {
 	};
 }
 inst_t;
+
+// inst_encode encodes the given instruction.
+inst_enc_t inst_encode(inst_t inst);

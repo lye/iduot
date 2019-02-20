@@ -145,11 +145,49 @@ inst_reg2_encode(inst_reg2_t op, inst_enc_t *enc)
 void
 inst_load_imm_encode(inst_load_imm_t op, inst_enc_t *enc)
 {
-	assert(op.imm < IDUOT_IMM_MAX);
+	assert(op.imm <= IDUOT_IMM_MAX);
 	assert(op.imm != 0);
+
+	*enc |= reg_id_encode(op.reg) << IDUOT_IMM_BITS;
+	*enc |= op.imm;
 }
 
 void
 inst_signal_encode(inst_signal_t op, inst_enc_t *enc)
 {
+	assert(op.signal <= IDUOT_SIG_MAX);
+
+	*enc |= reg_id_encode(op.reg) << IDUOT_SIG_BITS;
+	*enc |= op.signal;
+}
+
+inst_enc_t
+inst_encode(inst_t inst)
+{
+	inst_enc_t enc = 0;
+
+	inst_type_encode(inst.type, &enc);
+
+	switch (inst_type_format(inst.type)) {
+		case INST_FORMAT_REG1:
+			inst_reg1_encode(inst.reg1, &enc);
+			break;
+
+		case INST_FORMAT_REG2:
+			inst_reg2_encode(inst.reg2, &enc);
+			break;
+
+		case INST_FORMAT_LOAD_IMM:
+			inst_load_imm_encode(inst.load_imm, &enc);
+			break;
+
+		case INST_FORMAT_SIGNAL:
+			inst_signal_encode(inst.signal, &enc);
+			break;
+
+		case INST_FORMATS:
+			UNREACHABLE;
+	}
+
+	return enc;
 }

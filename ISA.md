@@ -53,10 +53,69 @@ The opcode table is as follows:
 |           |                |                              | See concurrency notes                                |
 | `11100`   | wait           | 1x register                  | `carry = signal #`, `dest = signal value`            |
 | `11101`   | fork           | 1x register                  | `carry = parent ? 0 : child segment                  |
-| `11110`   | signal         | 1x register, 3-bit immediate | `dest = signal value`, `immediate = signal #`        |
+| `11110`   | signal         | 1x register, 3-bit immediate | `dest = signal value`, `immediate = signal #`, `carry = task id`        |
 | `1111100` | alloc          | 1x register                  | `dest = new memory segment`                          |
 | `1111101` | free           | 1x register                  | `dest = old memory segment`                          |
 | `1111111` | halt           | 1x register                  | `halt = reg`, parent signalled                       |
+
+### Encoding
+
+All instructions are encoded to 12 bits. Variable-length ISAs are for crazy people; iduot isn't about taking riscs. There's only four different instruction encodings, which each have their formats in the following sections. Registers are encoded using a 4-bit integer with the following mapping:
+
+| Register        | Value | Binary |
+|-----------------|-------|--------|
+| zero            | `0x0` | `0000` |
+| program counter | `0x1` | `0001` |
+| stack pointer   | `0x2` | `0010` |
+| task segment    | `0x3` | `0011` |
+| memory segment  | `0x4` | `0100` |
+| carry           | `0x5` | `0101` |
+| A               | `0x6` | `0110` |
+| B               | `0x7` | `0111` |
+| C               | `0x8` | `1000` |
+| D               | `0x9` | `1001` |
+| E               | `0xA` | `1010` |
+| F               | `0xB` | `1011` |
+| G               | `0xC` | `1100` |
+| H               | `0xD` | `1101` |
+| reserved        | `0xE` | `1110` |
+| reserved        | `0xF` | `1111` |
+
+XXX: Wouldn't it be more fun if `0xA-0xD` was registers A-D?
+
+#### One Register Operands
+
+For `fork`, `alloc`, `free`, and `halt`. Each of these instructions takes exactly one register operand, but a variable length opcode. The padding bits are don't care, but are shown here as 0 for illustration. The instructions are encoded as:
+
+| Example   | Higher Bits | Padding | Lower Bits  |
+|-----------|-------------|---------|-------------|
+|           | opcode      |         | register    |
+| `wait A`  | `11100`     | `000`   | `0110`      |
+| `alloc B` | `1111100`   | `0`     | `0111`      |
+
+#### Two Register Operands
+
+For every other instruction, except load immediate and signal. These each have 4-bit opcodes and two register operands.
+
+| Example   | Bits 8-12 | Bits 4-8 | Bits 0-4 |
+|           | opcode    | reg1     | reg2     |
+| `add A B` | `0101`    | `0110`   | `0111`   |
+
+#### Load Immediate
+
+Load immediate is similar to a two register operand, except the second register is actually an immediate value. As an additional constraint, the immediate value may not be 0 (a NUL instruction is illegal and attempting to execute it will fault the task). The immediate value is 4-bits. You can load a larger immediate by combining multiple `load immediates` with `mul`. To load 0, use `xor R R`.
+
+| Example     | Bits 8-12 | Bits 4-8 | Bits 0-4 |
+|             | opcode    | reg      | imm      |
+| `loadi A 4` | `0000`    | `0110`   | `0100`   |
+
+#### Signal
+
+Signal has a longer opcode than load immediate, but stuffs both a register and an immediate value into the operands. The immediate value, used for the signal number, is only 3-bits. As an important note, the task segment id is read from the carry register (where the `fork` instruction writes it to on task creation).
+
+| Example      | Bits 7-12 | Bits 3-7 | Bits 0-3 |
+|              | opcode    | reg      | signal # |
+| `signal A 3` | `11110`   | `0110`   | `011`    |
 
 ## Concurrency
 
