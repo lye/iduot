@@ -17,7 +17,7 @@ Registers are identified by instructions with 4 bits; that gives 16 registers.
 
  * program counter; used for next operation.
  * stack pointer; expected to be used for stack operations.
- * stack segment; effectively current thread id.
+ * stack segment; effectively current task id.
  * memory segment; modifies load/write address src/destination.
  * carry register; special register set/read by various instructions.
  * zero register; always 0, cannot be written to.
@@ -39,11 +39,11 @@ The opcode table is as follows:
 | `0000`    | load immediate | register, 4-bit immediate    | `register = immediate`, immediate cannot be 0        |
 | `0001`    | load address   | 2x register                  | `dest = *src` where src is on current mseg           |
 | `0010`    | write address  | 2x register                  | `*dest = src` where dest is on current mseg          |
-| `0011`    | lshift         | 2x register                  | `dest = dest << src`                                 |
-| `0100`    | rshift         | 2x register                  | `dest = dest >> src`                                 |
-| `0101`    | add            | 2x register, writes carry    | `dest = dest + src`                                  |
-| `0110`    | sub            | 2x register, writes carry    | `dest = dest - src`                                  |
-| `0111`    | mul            | 2x register, writes carry    | `dest = dest * src`, `carry = 1` if overflow         |
+| `0011`    | load stack     | 2x register                  | `dest = *(sp + src)`                                 |
+| `0100`    | write stack    | 2x register                  | `*(sp + dest) = src`                                 |
+| `0101`    | add            | 2x register, writes carry    | `dest = dest + src`, `carry = 1` if overflow         |
+| `0110`    | sub            | 2x register, writes carry    | `dest = dest - src`, `carry = 1` if underflow        |
+| `0111`    | mul            | 2x register, writes carry    | `dest = dest * src`, `carry = overflow`              |
 | `1000`    | div            | 2x register, writes carry    | `dest = dest / src`, `carry = dest % src`            |
 | `1001`    | xor            | 2x register                  | `dest = dest ^ src`                                  |
 | `1010`    | and            | 2x register                  | `dest = dest & src                                   |
@@ -62,27 +62,27 @@ The opcode table is as follows:
 
 Let's be silly and add concurrency to our CPU.
 
-Each running "thread" of concurrency has two working segments -- the stack segment, which is expected to be used for stack space, and zero or more general-purpose memory segments. Segment 0 is reserved for a global state table which includes an IDT and a bitmap of segment usage. Segment usage can be one of three values: 
+Each running task of concurrency has two working segments -- the stack segment, which is expected to be used for stack space, and zero or more general-purpose memory segments. Segment 0 is reserved for a global state table which includes an IDT and a bitmap of segment usage. Segment usage can be one of three values: 
 
 | Value  | Usage     | Notes                  |
 |--------|-----------|------------------------|
 | `00`   | Unused    | Segment is unallocated |
-| `01`   | Stack     | Running "thread"       |
+| `01`   | Stack     | Running task's stack   |
 | `10`   | Memory    | In-use via alloc       |
 | `11`   | Mapped    | See hardware notes     |
 
 Since we need two bits for each of 4096 segments, we can fit 6 segments/word, so we need 682/4096 words to hold the bitmap. The segment bitmask is protected and cannot be written to except via the `fork`/`alloc`/`free`/`halt` instructions, or by attaching/removing hardware.
 
-Stack segments are effectively running "threads". I haven't decided yet if they're actually executed in parallel (maybe that's an implementation-defined detail? Not sure if it changes the semantics any). Each stack segment is prefixed by a header containing the "thread" state. "Threads" can synchronize by sending each other "signals" via the `signal` instruction. `signal` takes a 3-bit "signal #" operand and a single word value. Some signals are reserved for hardware usage:
+Stack segments are effectively running tasks. I haven't decided yet if they're actually executed in parallel (maybe that's an implementation-defined detail? Not sure if it changes the semantics any). Each stack segment is prefixed by a header containing the task state. Tasks can synchronize by sending each other "signals" via the `signal` instruction. `signal` takes a 3-bit "signal #" operand and a single word value. Some signals are reserved for hardware usage:
 
 | Signal # | Usage                          |
 |----------|--------------------------------|
 | `0`      | Child death. value = segment # |
 | `1-7`    | Application usage.             |
 
-So there's 7 usable signals/"thread" right now.
+So there's 7 usable signals per task right now.
 
-"Child death" is what happens when a normal hardware fault would occur (e.g. writing to protected memory, illegal instruction, etc) or when the `halt` instruction is invoked. This signal is delivered to the "thread" which called the `fork` instruction to create the child; the parent is responsible for invoking `free` on the child's segment, which is preseved for inspection. When a "thread" dies, all descendents of that thread are automatically halted. Invoking `free` on a segment also frees all descendents of that segment. This allows the reaping parent to potentially inspect any child state before it is destroyed.
+"Child death" is what happens when a normal hardware fault would occur (e.g. writing to protected memory, illegal instruction, etc) or when the `halt` instruction is invoked. This signal is delivered to the task which called the `fork` instruction to create the child; the parent is responsible for invoking `free` on the child's segment, which is preseved for inspection. When a task dies, all descendents of that task are automatically halted. Invoking `free` on a segment also frees all descendents of that segment. This allows the reaping parent to potentially inspect any child state before it is destroyed.
 
 Halt/fault codes are disambiguated by the topmost bit. Current exceptions include
 
@@ -105,20 +105,41 @@ The first 18 words of each stack segment are fixed, and look like this
 | 2     | 1      | Blocked signal destination |
 | 3     | 16     | Saved/current registers    |
 
-These words can be read (by any "thread", memory protection is too hard) but cannot be written to.
+These words can be read (by any task, memory protection is too hard) but cannot be written to.
 
-The initial "thread" has stack segment 1 allocated for it, and no parent. The initial "thread" is responsible for initializing the application and setting up the global IDT (see hardware notes). If the initial "thread" halts or faults the CPU shuts down. The program is loaded into an arbitrary segment mapped for memory (which is put in the memseg register) and the PC is set to 0.
+The initial task has stack segment 1 allocated for it, and no parent. The initial task is responsible for initializing the application and setting up the global IDT (see hardware notes). If the initial task halts or faults the CPU shuts down. The program is loaded into an arbitrary segment allocated for memory (which is put in the memseg register) and the PC is set to 0. Additional segments for each piece of attached hardware are mapped, and a signal is sent to the initial task for each attached piece of hardware.
 
 ### Signals
 
-Threads communicate by signals. These entirely replace interrupts, which require additional instructions, which is annoying. Signals are effectively (#, value) tuples that are delivered to a specified segment #. Waiting signals are retrieved via the `wait` instructions. Signals are not queued; `signal` will block until a corresponding `wait` is reached. When `signal` blocks (e.g. the destination is not currently blocked on a `wait` instruction), the "blocked signal destination" field of the segment header is set. The CPU then recursively checks each "blocked signal destination" field of the signalled "thread" looking for a cycle. If a cycle is detected, the entire cycle is slain with a deadlock fault.
+Tasks communicate via signals. These entirely replace interrupts, which require additional instructions, which is annoying. Signals are effectively (#, value) tuples that are delivered to a specified segment #. Waiting signals are retrieved via the `wait` instructions. Signals are not queued; `signal` will block until a corresponding `wait` is reached. When `signal` blocks (e.g. the destination is not currently blocked on a `wait` instruction), the "blocked signal destination" field of the segment header is set. The CPU then recursively checks each "blocked signal destination" field of the signalled task looking for a cycle. If a cycle is detected, the entire cycle is slain with a deadlock fault.
 
 Attempting to send a signal to a non-stack segment will additionally cause the sender to be slain.
 
 ### Alloc/Free
 
-TODO
+Tasks can requisition segments for general-purpose use. These can be freely shared between tasks -- there is no memory protections, for the most part -- but reads/writes are not synchronized. Segments are allocated with the `alloc` instruction, which sets the destination register to the allocated segment #, or 0 if there are no free segments. Memory segments are considered owned by the task which allocates them, and are automatically torn down when the owning segment is reaped (e.g. when `free` is invoked with the owning segment #), transitioning the segment to the "unused" state.
 
-## Hardware
+Memory segments, like task/stack segments, have a read-only header with the following format:
 
-TODO
+| Start | Length | Contents       |
+|-------|--------|----------------|
+| 0     | 1      | Owning task id |
+
+Allocated segments are zero-initialized, and the CPU will attempt to avoid segment re-use whenever possible in order. A read/write to an unused segment will fault the offending task.
+
+## Hardware and I/O
+
+Each attached piece of hardware is afforded a mmap-type segment when it is attached. Task 0 is sent signal #1 with the signal value = the segment # of the mmap segment. The mmap segment should always have the following header:
+
+| Start | Length    | Contents                       |
+|-------|-----------|--------------------------------|
+| 0     | 1         | Hardware type (read-only)      |
+| 1     | 1         | Hardware id (read-only)        |
+| 2     | 1         | Signalled task id (read/write) |
+| 3     | 1         | Owning task id (read/write)    |
+| 4     | remainder | Hardware-defined (read/write)  |
+
+The signalled task id is initially set to 1 (the initial task) and indicates where signals from the hardware will be sent. The owning task id (initially set to 1) indicates whether the hardware should be software-disconnected when the specified task is reaped (via implicit `free`).
+
+The mmap segment acts as a handle on the hardware -- `free`ing it will perform a software disconnect. It can also be sent signals; the signals are hardware-defined. Signals and the read-write mmap segment are the interface for the hardware, and they're entirely hardware-defined. The hardware interface should be inferred from the hardware type/id fields. The type should specify the signal/mmap interface, and the id is gratituous. While this only allows for 4k different hardware interfaces, it's not like I'm going to actually write that many. It is reasonable that for a real ISA the type/id fields would be controlled by a standardization body and alotted sparingly.
+
