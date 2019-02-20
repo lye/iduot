@@ -1,0 +1,5 @@
+*.swp
+/vm/obj
+/vm/bin
+/asm/obj
+/asm/bin
