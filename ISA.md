@@ -98,6 +98,7 @@ For `fork`, `alloc`, `free`, and `halt`. Each of these instructions takes exactl
 For every other instruction, except load immediate and signal. These each have 4-bit opcodes and two register operands.
 
 | Example   | Bits 8-12 | Bits 4-8 | Bits 0-4 |
+|-----------|-----------|----------|----------|
 |           | opcode    | reg1     | reg2     |
 | `add A B` | `0101`    | `0110`   | `0111`   |
 
@@ -106,6 +107,7 @@ For every other instruction, except load immediate and signal. These each have 4
 Load immediate is similar to a two register operand, except the second register is actually an immediate value. As an additional constraint, the immediate value may not be 0 (a NUL instruction is illegal and attempting to execute it will fault the task). The immediate value is 4-bits. You can load a larger immediate by combining multiple `load immediates` with `mul`. To load 0, use `xor R R`.
 
 | Example     | Bits 8-12 | Bits 4-8 | Bits 0-4 |
+|-------------|-----------|----------|----------|
 |             | opcode    | reg      | imm      |
 | `loadi A 4` | `0000`    | `0110`   | `0100`   |
 
@@ -114,6 +116,7 @@ Load immediate is similar to a two register operand, except the second register 
 Signal has a longer opcode than load immediate, but stuffs both a register and an immediate value into the operands. The immediate value, used for the signal number, is only 3-bits. As an important note, the task segment id is read from the carry register (where the `fork` instruction writes it to on task creation).
 
 | Example      | Bits 7-12 | Bits 3-7 | Bits 0-3 |
+|--------------|-----------|----------|----------|
 |              | opcode    | reg      | signal # |
 | `signal A 3` | `11110`   | `0110`   | `011`    |
 
