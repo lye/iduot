@@ -12,10 +12,6 @@ static const uint16_t IDUOT_REG_BITS = 4;
 static const uint16_t IDUOT_IMM_BITS = 4;
 static const uint16_t IDUOT_IMM_MAX = (1 << (IDUOT_IMM_BITS)) - 1;
 
-// IDUOT_SIG_MAX is the maximum signal number that can be sent.
-static const uint16_t IDUOT_SIG_BITS = 3;
-static const uint16_t IDUOT_SIG_MAX = (1 << (IDUOT_SIG_BITS)) - 1;
-
 // inst_enc_t is an encoded instruction. For convenience, we're encoding to
 // uint16_t's and packing them to uint12_t's later on. This makes manipulation
 // a lot more straightforward.
@@ -27,7 +23,6 @@ typedef enum {
 	INST_FORMAT_REG1,
 	INST_FORMAT_REG2,
 	INST_FORMAT_LOAD_IMM,
-	INST_FORMAT_SIGNAL,
 	INST_FORMATS,
 }
 inst_format_t;
@@ -44,16 +39,14 @@ typedef enum {
 	INST_SUB,
 	INST_MUL,
 	INST_DIV,
-	INST_XOR,
-	INST_AND,
-	INST_NOT,
+	INST_NAND,
 	INST_CMP,
 	INST_JE,
-	INST_WAIT,
-	INST_FORK,
 	INST_SIGNAL,
+	INST_WAIT,
 	INST_ALLOC,
 	INST_FREE,
+	INST_FORK,
 	INST_HALT,
 	INSTS,
 }
@@ -85,8 +78,8 @@ typedef enum {
 	REG_ID_F,
 	REG_ID_G,
 	REG_ID_H,
-	REG_ID_RESERVED_0,
-	REG_ID_RESERVED_1,
+	REG_ID_I,
+	REG_ID_J,
 	REG_IDS,
 }
 reg_id_t;
@@ -127,17 +120,6 @@ inst_load_imm_t;
 // inst_load_imm_encode encodes load immediate operands.
 void inst_load_imm_encode(inst_load_imm_t op, inst_enc_t *enc);
 
-// inst_signal_t is used for INST_SIGNAL. The immediate value (which is the
-// signal number) is limited to 3 bits. This corresponds to INST_FORMAT_SIGNAL.
-typedef struct {
-	reg_id_t reg;
-	uint8_t signal; 
-}
-inst_signal_t;
-
-// inst_signal_encode yep it encodes the signal operands.
-void inst_signal_encode(inst_signal_t op, inst_enc_t *enc);
-
 // inst_t is a single instruction.
 typedef struct {
 	inst_type_t type;
@@ -146,7 +128,6 @@ typedef struct {
 		inst_reg1_t reg1;
 		inst_reg2_t reg2;
 		inst_load_imm_t load_imm;
-		inst_signal_t signal;
 	};
 }
 inst_t;

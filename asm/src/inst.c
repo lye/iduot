@@ -11,6 +11,7 @@ inst_type_format(inst_type_t type)
 	}
 	table[] = {
 		{ INST_LOAD_IMM,    INST_FORMAT_LOAD_IMM },
+
 		{ INST_LOAD_MEM,    INST_FORMAT_REG2     },
 		{ INST_STORE_MEM,   INST_FORMAT_REG2     },
 		{ INST_LOAD_STACK,  INST_FORMAT_REG2     },
@@ -19,14 +20,13 @@ inst_type_format(inst_type_t type)
 		{ INST_SUB,         INST_FORMAT_REG2     },
 		{ INST_MUL,         INST_FORMAT_REG2     },
 		{ INST_DIV,         INST_FORMAT_REG2     },
-		{ INST_XOR,         INST_FORMAT_REG2     },
-		{ INST_AND,         INST_FORMAT_REG2     },
-		{ INST_NOT,         INST_FORMAT_REG2     },
+		{ INST_NAND,        INST_FORMAT_REG2     },
 		{ INST_CMP,         INST_FORMAT_REG2     },
 		{ INST_JE,          INST_FORMAT_REG2     },
-		{ INST_WAIT,        INST_FORMAT_REG1     },
+		{ INST_WAIT,        INST_FORMAT_REG2     },
+		{ INST_SIGNAL,      INST_FORMAT_REG2     },
+
 		{ INST_FORK,        INST_FORMAT_REG1     },
-		{ INST_SIGNAL,      INST_FORMAT_SIGNAL   },
 		{ INST_ALLOC,       INST_FORMAT_REG1     },
 		{ INST_FREE,        INST_FORMAT_REG1     },
 		{ INST_HALT,        INST_FORMAT_REG1     },
@@ -54,26 +54,26 @@ inst_type_encode(inst_type_t type, inst_enc_t *val)
 		uint16_t opcode;
 	}
 	table[] = {
-		{ INST_LOAD_IMM,    4, 0b0000    },
-		{ INST_LOAD_MEM,    4, 0b0001    },
-		{ INST_STORE_MEM,   4, 0b0010    },
-		{ INST_LOAD_STACK,  4, 0b0011    },
-		{ INST_STORE_STACK, 4, 0b0100    },
-		{ INST_ADD,         4, 0b0101    },
-		{ INST_SUB,         4, 0b0110    },
-		{ INST_MUL,         4, 0b0111    },
-		{ INST_DIV,         4, 0b1000    },
-		{ INST_XOR,         4, 0b1001    },
-		{ INST_AND,         4, 0b1010    },
-		{ INST_NOT,         4, 0b1011    },
-		{ INST_CMP,         4, 0b1100    },
-		{ INST_JE,          4, 0b1101    },
-		{ INST_WAIT,        5, 0b11100   },
-		{ INST_FORK,        5, 0b11101   },
-		{ INST_SIGNAL,      5, 0b11110   },
-		{ INST_ALLOC,       7, 0b1111100 },
-		{ INST_FREE,        7, 0b1111101 },
-		{ INST_HALT,        7, 0b1111111 },
+		{ INST_LOAD_IMM,    4, 0b0000     },
+		{ INST_LOAD_MEM,    4, 0b0001     },
+		{ INST_STORE_MEM,   4, 0b0010     },
+		{ INST_LOAD_STACK,  4, 0b0011     },
+		{ INST_STORE_STACK, 4, 0b0100     },
+		{ INST_ADD,         4, 0b0101     },
+		{ INST_SUB,         4, 0b0110     },
+		{ INST_MUL,         4, 0b0111     },
+		{ INST_DIV,         4, 0b1000     },
+		{ INST_NAND,        4, 0b1001     },
+		{ INST_CMP,         4, 0b1100     },
+		{ INST_JE,          4, 0b1101     },
+		// 0b1100 is unused
+		{ INST_SIGNAL,      4, 0b1101     },
+		{ INST_WAIT,        4, 0b1110     },
+		{ INST_ALLOC,       8, 0b11110000 },
+		{ INST_FREE,        8, 0b11110001 },
+		{ INST_FORK,        8, 0b11110010 },
+		// 0b11110010-0b11111110 are unused
+		{ INST_HALT,        8, 0b11111111 },
 	};
 	STATIC_ASSERT(
 		ARRSIZE(table) == INSTS,
@@ -112,8 +112,8 @@ reg_id_encode(reg_id_t reg)
 		{ REG_ID_F,          0xB },
 		{ REG_ID_G,          0xC },
 		{ REG_ID_H,          0xD },
-		{ REG_ID_RESERVED_0, 0xE },
-		{ REG_ID_RESERVED_1, 0xF },
+		{ REG_ID_I,          0xE },
+		{ REG_ID_J,          0xF },
 	};
 	STATIC_ASSERT(
 		ARRSIZE(table) == REG_IDS,
@@ -152,15 +152,6 @@ inst_load_imm_encode(inst_load_imm_t op, inst_enc_t *enc)
 	*enc |= op.imm;
 }
 
-void
-inst_signal_encode(inst_signal_t op, inst_enc_t *enc)
-{
-	assert(op.signal <= IDUOT_SIG_MAX);
-
-	*enc |= reg_id_encode(op.reg) << IDUOT_SIG_BITS;
-	*enc |= op.signal;
-}
-
 inst_enc_t
 inst_encode(inst_t inst)
 {
@@ -179,10 +170,6 @@ inst_encode(inst_t inst)
 
 		case INST_FORMAT_LOAD_IMM:
 			inst_load_imm_encode(inst.load_imm, &enc);
-			break;
-
-		case INST_FORMAT_SIGNAL:
-			inst_signal_encode(inst.signal, &enc);
 			break;
 
 		case INST_FORMATS:

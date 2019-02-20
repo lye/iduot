@@ -21,8 +21,7 @@ Registers are identified by instructions with 4 bits; that gives 16 registers.
  * memory segment; modifies load/write address src/destination.
  * carry register; special register set/read by various instructions.
  * zero register; always 0, cannot be written to.
- * 8 general purpose registers: a, b, c, d, e, f, g, h
- * 2 reserved registers
+ * 10 general purpose registers: a, b, c, d, e, f, g, h, i, j
 
 ## Instructions
 
@@ -34,29 +33,39 @@ Each instruction is encoded in a 12-bit word. Most of the instructions are an op
 
 The opcode table is as follows:
 
-| Opcode    | Instruction    | Operands                     | Notes                                                |
-|-----------|----------------|------------------------------|------------------------------------------------------|
-| `0000`    | load immediate | register, 4-bit immediate    | `register = immediate`, immediate cannot be 0        |
-| `0001`    | load memory    | 2x register                  | `dest = *src` where src is on current mseg           |
-| `0010`    | store memory   | 2x register                  | `*dest = src` where dest is on current mseg          |
-| `0011`    | load stack     | 2x register                  | `dest = *(sp + src)`                                 |
-| `0100`    | store stack    | 2x register                  | `*(sp + dest) = src`                                 |
-| `0101`    | add            | 2x register, writes carry    | `dest = dest + src`, `carry = 1` if overflow         |
-| `0110`    | sub            | 2x register, writes carry    | `dest = dest - src`, `carry = 1` if underflow        |
-| `0111`    | mul            | 2x register, writes carry    | `dest = dest * src`, `carry = overflow`              |
-| `1000`    | div            | 2x register, writes carry    | `dest = dest / src`, `carry = dest % src`            |
-| `1001`    | xor            | 2x register                  | `dest = dest ^ src`                                  |
-| `1010`    | and            | 2x register                  | `dest = dest & src`                                  |
-| `1011`    | not            | 2x register                  | `dest = !src`, `dest` and `src` may be same register |
-| `1100`    | cmp            | 2x register, writes carry    | `carry = (dest == src) ? 0 : ((dest < src) ? 1 : 2)` |
-| `1101`    | je             | 2x register, reads carry     | `if (carry == src) pc = dst`                         |
-|           |                |                              | See concurrency notes                                |
-| `11100`   | wait           | 1x register                  | `carry = signal #`, `dest = signal value`            |
-| `11101`   | fork           | 1x register                  | `carry = parent ? 0 : child segment`                 |
-| `11110`   | signal         | 1x register, 3-bit immediate | `dest = signal value`, `immediate = signal #`, `carry = task id`        |
-| `1111100` | alloc          | 1x register                  | `dest = new memory segment`                          |
-| `1111101` | free           | 1x register                  | `dest = old memory segment`                          |
-| `1111111` | halt           | 1x register                  | `halt = reg`, parent signalled                       |
+| Opcode     | Instruction    | Operands                     | Notes                                                |
+|------------|----------------|------------------------------|------------------------------------------------------|
+| `0000`     | load immediate | register, 4-bit immediate    | `register = immediate`, immediate cannot be 0        |
+| `0001`     | load memory    | 2x register                  | `dest = *src` where src is on current mseg           |
+| `0010`     | store memory   | 2x register                  | `*dest = src` where dest is on current mseg          |
+| `0011`     | load stack     | 2x register                  | `dest = *(sp + src)`                                 |
+| `0100`     | store stack    | 2x register                  | `*(sp + dest) = src`                                 |
+| `0101`     | add            | 2x register, writes carry    | `dest = dest + src`, `carry = 1` if overflow         |
+| `0110`     | sub            | 2x register, writes carry    | `dest = dest - src`, `carry = 1` if underflow        |
+| `0111`     | mul            | 2x register, writes carry    | `dest = dest * src`, `carry = overflow`              |
+| `1000`     | div            | 2x register, writes carry    | `dest = dest / src`, `carry = dest % src`            |
+| `1001`     | nand           | 2x register                  | `dest = !(dest & src)`                               |
+| `1010`     | cmp            | 2x register, writes carry    | `carry = (dest == src) ? 0 : ((dest < src) ? 1 : 2)` |
+| `1011`     | je             | 2x register, reads carry     | `if (carry == src) pc = dst`                         |
+| `1100`     |                |                              |                                                      |
+| `1101`     | signal         | 2x register                  | `dest = signal value`, `src = signal #`, `carry = task id` |
+| `1110`     | wait           | 2x register                  | `dest = signal value`, `src = signal #`, `carry = task id` |
+| `11110000` | alloc          | 1x register                  | `reg = new memory segment`                           |
+| `11110001` | free           | 1x register                  | `reg = old memory segment`                           |
+| `11110010` | fork           | 1x register                  | `reg = parent ? child segment : 0`                   |
+| `11110011` |                |                              |                                                      |
+| `11110100` |                |                              |                                                      |
+| `11110101` |                |                              |                                                      |
+| `11110110` |                |                              |                                                      |
+| `11110111` |                |                              |                                                      |
+| `11111000` |                |                              |                                                      |
+| `11111001` |                |                              |                                                      |
+| `11111010` |                |                              |                                                      |
+| `11111011` |                |                              |                                                      |
+| `11111100` |                |                              |                                                      |
+| `11111101` |                |                              |                                                      |
+| `11111110` |                |                              |                                                      |
+| `11111111` | halt           | 1x register                  | `halt = reg`, parent signalled                       |
 
 ### Encoding
 
@@ -78,29 +87,30 @@ All instructions are encoded to 12 bits. Variable-length ISAs are for crazy peop
 | F               | `0xB` | `1011` |
 | G               | `0xC` | `1100` |
 | H               | `0xD` | `1101` |
-| reserved        | `0xE` | `1110` |
-| reserved        | `0xF` | `1111` |
+| I               | `0xE` | `1110` |
+| J               | `0xF` | `1111` |
 
 XXX: Wouldn't it be more fun if `0xA-0xD` was registers A-D?
 
 #### One Register Operands
 
-For `fork`, `alloc`, `free`, and `halt`. Each of these instructions takes exactly one register operand, but a variable length opcode. The padding bits are don't care, but are shown here as 0 for illustration. The instructions are encoded as:
+For `fork`, `alloc`, `free`, and `halt`. Each of these instructions takes exactly one register operand, but a variable length opcode. The instructions are encoded as:
 
-| Example   | Higher Bits | Padding | Lower Bits  |
-|-----------|-------------|---------|-------------|
-|           | opcode      |         | register    |
-| `wait A`  | `11100`     | `000`   | `0110`      |
-| `alloc B` | `1111100`   | `0`     | `0111`      |
+| Example   | Higher Bits | Lower Bits  |
+|-----------|-------------|-------------|
+|           | opcode      | register    |
+| `alloc B` | `11110000`  | `0111`      |
 
 #### Two Register Operands
 
 For every other instruction, except load immediate and signal. These each have 4-bit opcodes and two register operands.
 
-| Example   | Bits 8-12 | Bits 4-8 | Bits 0-4 |
-|-----------|-----------|----------|----------|
-|           | opcode    | reg1     | reg2     |
-| `add A B` | `0101`    | `0110`   | `0111`   |
+| Example      | Bits 8-12 | Bits 4-8 | Bits 0-4 |
+|--------------|-----------|----------|----------|
+|              | opcode    | reg1     | reg2     |
+| `add A B`    | `0101`    | `0110`   | `0111`   |
+| `wait A B`   | `1110`    | `0110`   | `0111`   |
+| `signal A B` | `1101`    | `0110`   | `0111`   |
 
 #### Load Immediate
 
@@ -110,15 +120,6 @@ Load immediate is similar to a two register operand, except the second register 
 |-------------|-----------|----------|----------|
 |             | opcode    | reg      | imm      |
 | `loadi A 4` | `0000`    | `0110`   | `0100`   |
-
-#### Signal
-
-Signal has a longer opcode than load immediate, but stuffs both a register and an immediate value into the operands. The immediate value, used for the signal number, is only 3-bits. As an important note, the task segment id is read from the carry register (where the `fork` instruction writes it to on task creation).
-
-| Example      | Bits 7-12 | Bits 3-7 | Bits 0-3 |
-|--------------|-----------|----------|----------|
-|              | opcode    | reg      | signal # |
-| `signal A 3` | `11110`   | `0110`   | `011`    |
 
 ## Concurrency
 
@@ -135,14 +136,11 @@ Each running task of concurrency has two working segments -- the stack segment, 
 
 Since we need two bits for each of 4096 segments, we can fit 6 segments/word, so we need 682/4096 words to hold the bitmap. The segment bitmask is protected and cannot be written to except via the `fork`/`alloc`/`free`/`halt` instructions, or by attaching/removing hardware.
 
-Stack segments are effectively running tasks. I haven't decided yet if they're actually executed in parallel (maybe that's an implementation-defined detail? Not sure if it changes the semantics any). Each stack segment is prefixed by a header containing the task state. Tasks can synchronize by sending each other "signals" via the `signal` instruction. `signal` takes a 3-bit "signal #" operand and a single word value. Some signals are reserved for hardware usage:
+Stack segments are effectively running tasks. I haven't decided yet if they're actually executed in parallel (maybe that's an implementation-defined detail? Not sure if it changes the semantics any). Each stack segment is prefixed by a header containing the task state. Tasks can synchronize by sending each other "signals" via the `signal` instruction. `signal` takes a "signal #" operand and a single word value. Some signals are reserved for hardware usage:
 
 | Signal # | Usage                          |
 |----------|--------------------------------|
 | `0`      | Child death. value = segment # |
-| `1-7`    | Application usage.             |
-
-So there's 7 usable signals per task right now.
 
 "Child death" is what happens when a normal hardware fault would occur (e.g. writing to protected memory, illegal instruction, etc) or when the `halt` instruction is invoked. This signal is delivered to the task which called the `fork` instruction to create the child; the parent is responsible for invoking `free` on the child's segment, which is preseved for inspection. When a task dies, all descendents of that task are automatically halted. Invoking `free` on a segment also frees all descendents of that segment. This allows the reaping parent to potentially inspect any child state before it is destroyed.
 
