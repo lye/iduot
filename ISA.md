@@ -46,13 +46,13 @@ The opcode table is as follows:
 | `0111`    | mul            | 2x register, writes carry    | `dest = dest * src`, `carry = overflow`              |
 | `1000`    | div            | 2x register, writes carry    | `dest = dest / src`, `carry = dest % src`            |
 | `1001`    | xor            | 2x register                  | `dest = dest ^ src`                                  |
-| `1010`    | and            | 2x register                  | `dest = dest & src                                   |
+| `1010`    | and            | 2x register                  | `dest = dest & src`                                  |
 | `1011`    | not            | 2x register                  | `dest = !src`, `dest` and `src` may be same register |
 | `1100`    | cmp            | 2x register, writes carry    | `carry = (dest == src) ? 0 : ((dest < src) ? 1 : 2)` |
 | `1101`    | je             | 2x register, reads carry     | `if (carry == src) pc = dst`                         |
 |           |                |                              | See concurrency notes                                |
 | `11100`   | wait           | 1x register                  | `carry = signal #`, `dest = signal value`            |
-| `11101`   | fork           | 1x register                  | `carry = parent ? 0 : child segment                  |
+| `11101`   | fork           | 1x register                  | `carry = parent ? 0 : child segment`                 |
 | `11110`   | signal         | 1x register, 3-bit immediate | `dest = signal value`, `immediate = signal #`, `carry = task id`        |
 | `1111100` | alloc          | 1x register                  | `dest = new memory segment`                          |
 | `1111101` | free           | 1x register                  | `dest = old memory segment`                          |
