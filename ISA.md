@@ -37,10 +37,10 @@ The opcode table is as follows:
 | Opcode    | Instruction    | Operands                     | Notes                                                |
 |-----------|----------------|------------------------------|------------------------------------------------------|
 | `0000`    | load immediate | register, 4-bit immediate    | `register = immediate`, immediate cannot be 0        |
-| `0001`    | load address   | 2x register                  | `dest = *src` where src is on current mseg           |
-| `0010`    | write address  | 2x register                  | `*dest = src` where dest is on current mseg          |
+| `0001`    | load memory    | 2x register                  | `dest = *src` where src is on current mseg           |
+| `0010`    | store memory   | 2x register                  | `*dest = src` where dest is on current mseg          |
 | `0011`    | load stack     | 2x register                  | `dest = *(sp + src)`                                 |
-| `0100`    | write stack    | 2x register                  | `*(sp + dest) = src`                                 |
+| `0100`    | store stack    | 2x register                  | `*(sp + dest) = src`                                 |
 | `0101`    | add            | 2x register, writes carry    | `dest = dest + src`, `carry = 1` if overflow         |
 | `0110`    | sub            | 2x register, writes carry    | `dest = dest - src`, `carry = 1` if underflow        |
 | `0111`    | mul            | 2x register, writes carry    | `dest = dest * src`, `carry = overflow`              |
