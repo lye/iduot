@@ -14,8 +14,8 @@ inst_type_format(inst_type_t type)
 
 		{ INST_LOAD_MEM,    INST_FORMAT_REG2     },
 		{ INST_STORE_MEM,   INST_FORMAT_REG2     },
-		{ INST_LOAD_STACK,  INST_FORMAT_REG2     },
-		{ INST_STORE_STACK, INST_FORMAT_REG2     },
+		{ INST_LOAD_STK,    INST_FORMAT_REG2     },
+		{ INST_STORE_STK,   INST_FORMAT_REG2     },
 		{ INST_ADD,         INST_FORMAT_REG2     },
 		{ INST_SUB,         INST_FORMAT_REG2     },
 		{ INST_MUL,         INST_FORMAT_REG2     },
@@ -23,12 +23,18 @@ inst_type_format(inst_type_t type)
 		{ INST_NAND,        INST_FORMAT_REG2     },
 		{ INST_CMP,         INST_FORMAT_REG2     },
 		{ INST_JE,          INST_FORMAT_REG2     },
+		{ INST_MV,          INST_FORMAT_REG2     },
 		{ INST_WAIT,        INST_FORMAT_REG2     },
 		{ INST_SIGNAL,      INST_FORMAT_REG2     },
 
-		{ INST_FORK,        INST_FORMAT_REG1     },
 		{ INST_ALLOC,       INST_FORMAT_REG1     },
 		{ INST_FREE,        INST_FORMAT_REG1     },
+		{ INST_FORK,        INST_FORMAT_REG1     },
+		{ INST_WAITFOR,     INST_FORMAT_REG1     },
+		{ INST_GETISEG,     INST_FORMAT_REG1     },
+		{ INST_SETISEG,     INST_FORMAT_REG1     },
+		{ INST_TASKID,      INST_FORMAT_REG1     },
+
 		{ INST_HALT,        INST_FORMAT_REG1     },
 	};
 	STATIC_ASSERT(
@@ -57,22 +63,26 @@ inst_type_encode(inst_type_t type, inst_enc_t *val)
 		{ INST_LOAD_IMM,    4, 0b0000     },
 		{ INST_LOAD_MEM,    4, 0b0001     },
 		{ INST_STORE_MEM,   4, 0b0010     },
-		{ INST_LOAD_STACK,  4, 0b0011     },
-		{ INST_STORE_STACK, 4, 0b0100     },
+		{ INST_LOAD_STK,    4, 0b0011     },
+		{ INST_STORE_STK,   4, 0b0100     },
 		{ INST_ADD,         4, 0b0101     },
 		{ INST_SUB,         4, 0b0110     },
 		{ INST_MUL,         4, 0b0111     },
 		{ INST_DIV,         4, 0b1000     },
 		{ INST_NAND,        4, 0b1001     },
-		{ INST_CMP,         4, 0b1100     },
-		{ INST_JE,          4, 0b1101     },
-		// 0b1100 is unused
+		{ INST_CMP,         4, 0b1010     },
+		{ INST_JE,          4, 0b1011     },
+		{ INST_MV,          4, 0b1100     },
 		{ INST_SIGNAL,      4, 0b1101     },
 		{ INST_WAIT,        4, 0b1110     },
 		{ INST_ALLOC,       8, 0b11110000 },
 		{ INST_FREE,        8, 0b11110001 },
 		{ INST_FORK,        8, 0b11110010 },
-		// 0b11110010-0b11111110 are unused
+		{ INST_WAITFOR,     8, 0b11110011 },
+		{ INST_GETISEG,     8, 0b11110100 },
+		{ INST_SETISEG,     8, 0b11110101 },
+		{ INST_TASKID,      8, 0b11110110 },
+		// 0b11110111-0b11111110 are unused
 		{ INST_HALT,        8, 0b11111111 },
 	};
 	STATIC_ASSERT(
