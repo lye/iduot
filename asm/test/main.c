@@ -3,10 +3,12 @@
 typedef Suite*(*suite_def)();
 
 extern Suite 
-	*suite_inst();
+	*suite_inst(),
+	*suite_parser();
 
 static suite_def suites[] = {
 	&suite_inst,
+	&suite_parser,
 };
 
 int

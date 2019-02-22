@@ -1,4 +1,4 @@
-#include <sys/types.h>
+#pragma once
 
 // IDUOT_WORD_BITS is the number of bits per word, which is defined as 12 
 // because iduot is a 12-bit CPU.
@@ -61,6 +61,10 @@ inst_type_t;
 // instruction.
 inst_format_t inst_type_format(inst_type_t type);
 
+// inst_type_parse returns the corresponding type for the
+// given string. If the string is invalid, INSTS is returned.
+inst_type_t inst_type_parse(const char *str);
+
 // inst_type_encode encodes the instruction opcode to the passed-in value.
 // The idea is that the value is 0-initialized and inst_type_encode can be
 // combined with the corresponding format encode to build the full encoded
@@ -71,8 +75,8 @@ void inst_type_encode(inst_type_t type, inst_enc_t *val);
 typedef enum {
 	REG_ID_PC,    // program counter
 	REG_ID_SP,    // stack pointer
-	REG_ID_TSEG,  // task segment
-	REG_ID_MSEG,  // active memory segment
+	REG_ID_RMEM,  // readable memory segment
+	REG_ID_WMEM,  // writable memory segment
 	REG_ID_CARRY, // carry
 	REG_ID_ZERO,
 	REG_ID_A,
@@ -88,6 +92,10 @@ typedef enum {
 	REG_IDS,
 }
 reg_id_t;
+
+// reg_id_parse parses a string repr of the register. It returns REG_IDS if 
+// there is no corresponding register.
+reg_id_t reg_id_parse(const char *str);
 
 // reg_id_encode returns the 4-bit numeric identifier for the specified
 // register id.

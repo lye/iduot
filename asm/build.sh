@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 cd `dirname $0`
 
@@ -24,10 +24,17 @@ BUILD_FLAGS="
 	-std=c11
 	-isystem/usr/local/include
 	-Iinc
+	-Iobj
 "
 
 mkdir -p bin
 mkdir -p obj
+
+bison -b obj/parser -d src/parser.y
+SOURCE_FILES="$SOURCE_FILES obj/parser.tab.c"
+
+flex -oobj/parser.l.c src/parser.l
+SOURCE_FILES="$SOURCE_FILES obj/parser.l.c"
 
 for C_FILE in $SOURCE_FILES ; do
 	OBJ_FILE=`echo $C_FILE | sed -e 's#\.c$#.o#' | sed -e 's#^src/#obj/#'`

@@ -1,6 +1,8 @@
+#include <sys/types.h>
+#include <assert.h>
+#include <string.h>
 #include "inst.h"
 #include "utils.h"
-#include <assert.h>
 
 inst_format_t
 inst_type_format(inst_type_t type)
@@ -49,6 +51,48 @@ inst_type_format(inst_type_t type)
 	}
 
 	UNREACHABLE;
+}
+
+inst_type_t
+inst_type_parse(const char *str)
+{
+	static const struct {
+		inst_type_t type;
+		const char *str;
+	}
+	table[] = {
+		{ INST_LOAD_IMM,  "loadimm"  },
+		{ INST_LOAD_MEM,  "loadmem"  },
+		{ INST_STORE_MEM, "storemem" },
+		{ INST_LOAD_STK,  "loadstk"  },
+		{ INST_STORE_STK, "storestk" },
+		{ INST_ADD,       "add"      },
+		{ INST_SUB,       "sub"      },
+		{ INST_MUL,       "mul"      },
+		{ INST_DIV,       "div"      },
+		{ INST_NAND,      "nand"     },
+		{ INST_CMP,       "cmp"      },
+		{ INST_JE,        "je"       },
+		{ INST_MV,        "mv"       },
+		{ INST_SIGNAL,    "signal"   },
+		{ INST_WAIT,      "wait"     },
+		{ INST_ALLOC,     "alloc"    },
+		{ INST_FREE,      "free"     },
+		{ INST_FORK,      "fork"     },
+		{ INST_WAITFOR,   "waitfor"  },
+		{ INST_GETISEG,   "getiseg"  },
+		{ INST_SETISEG,   "setiseg"  },
+		{ INST_TASKID,    "taskid"   },
+		{ INST_HALT,      "halt"     },
+	};
+
+	for (size_t i = 0; i < ARRSIZE(table); i += 1) {
+		if (0 == strcmp(table[i].str, str)) {
+			return table[i].type;
+		}
+	}
+
+	return INSTS;
 }
 
 void
@@ -100,6 +144,41 @@ inst_type_encode(inst_type_t type, inst_enc_t *val)
 	UNREACHABLE;
 }
 
+reg_id_t
+reg_id_parse(const char *str)
+{
+	static const struct {
+		reg_id_t    reg;
+		const char *str;
+	}
+	table[] = {
+		{ REG_ID_PC,    "PC"    },
+		{ REG_ID_SP,    "SP"    },
+		{ REG_ID_RMEM,  "RMEM"  },
+		{ REG_ID_WMEM,  "WMEM"  },
+		{ REG_ID_CARRY, "CARRY" },
+		{ REG_ID_ZERO,  "ZERO"  },
+		{ REG_ID_A,     "A"     },
+		{ REG_ID_B,     "B"     },
+		{ REG_ID_C,     "C"     },
+		{ REG_ID_D,     "D"     },
+		{ REG_ID_E,     "E"     },
+		{ REG_ID_F,     "F"     },
+		{ REG_ID_G,     "G"     },
+		{ REG_ID_H,     "H"     },
+		{ REG_ID_I,     "I"     },
+		{ REG_ID_J,     "J"     },
+	};
+
+	for (size_t i = 0; i < ARRSIZE(table); i += 1) {
+		if (0 == strcmp(table[i].str, str)) {
+			return table[i].reg;
+		}
+	}
+
+	return REG_IDS;
+}
+
 uint16_t
 reg_id_encode(reg_id_t reg)
 {
@@ -111,8 +190,8 @@ reg_id_encode(reg_id_t reg)
 		{ REG_ID_ZERO,       0x0 },
 		{ REG_ID_PC,         0x1 },
 		{ REG_ID_SP,         0x2 },
-		{ REG_ID_TSEG,       0x3 },
-		{ REG_ID_MSEG,       0x4 },
+		{ REG_ID_RMEM,       0x3 },
+		{ REG_ID_WMEM,       0x4 },
 		{ REG_ID_CARRY,      0x5 },
 		{ REG_ID_A,          0x6 },
 		{ REG_ID_B,          0x7 },
