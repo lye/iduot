@@ -50,6 +50,7 @@ program:
 
 stmtlist:
 	T_NL stmt stmtlist
+	| T_NL
 	| %empty
 	{}
 
