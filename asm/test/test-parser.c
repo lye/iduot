@@ -76,6 +76,24 @@ START_TEST(parse_loadimm)
 }
 END_TEST
 
+static void
+ck_loadimm2(program_t *prog)
+{
+	inst_t expect = {
+		.type = INST_LOAD_IMM,
+		.load_imm = {
+			.reg = REG_ID_A,
+			.imm = 4,
+		},
+	};
+
+	ck_assert_int_eq(2, prog->insts_len);
+	ck_assert_inst_eq(&expect, &prog->insts[0]);
+	expect.load_imm.reg = REG_ID_B;
+	expect.load_imm.imm = 2;
+	ck_assert_inst_eq(&expect, &prog->insts[1]);
+}
+
 START_TEST(parse_loadimm2_no_nl)
 {
 	const char *bs =
@@ -86,21 +104,7 @@ START_TEST(parse_loadimm2_no_nl)
 	program_init(&prog);
 
 	ck_assert_int_eq(0, program_parse_bytes(&prog, bs, strlen(bs)));
-
-	inst_t expect = {
-		.type = INST_LOAD_IMM,
-		.load_imm = {
-			.reg = REG_ID_A,
-			.imm = 4,
-		},
-	};
-
-	ck_assert_int_eq(2, prog.insts_len);
-	ck_assert_inst_eq(&expect, &prog.insts[0]);
-	expect.load_imm.reg = REG_ID_B;
-	expect.load_imm.imm = 2;
-	ck_assert_inst_eq(&expect, &prog.insts[1]);
-
+	ck_loadimm2(&prog);
 	program_free(&prog);
 }
 END_TEST
@@ -115,21 +119,21 @@ START_TEST(parse_loadimm2_nl)
 	program_init(&prog);
 
 	ck_assert_int_eq(0, program_parse_bytes(&prog, bs, strlen(bs)));
+	ck_loadimm2(&prog);
+	program_free(&prog);
+}
+END_TEST
 
-	inst_t expect = {
-		.type = INST_LOAD_IMM,
-		.load_imm = {
-			.reg = REG_ID_A,
-			.imm = 4,
-		},
-	};
+START_TEST(parse_loadimm2_nls)
+{
+	const char *bs = 
+		"\n\nloadimm A 4\n\n\nloadimm B 2\n";
 
-	ck_assert_int_eq(2, prog.insts_len);
-	ck_assert_inst_eq(&expect, &prog.insts[0]);
-	expect.load_imm.reg = REG_ID_B;
-	expect.load_imm.imm = 2;
-	ck_assert_inst_eq(&expect, &prog.insts[1]);
+	program_t prog;
+	program_init(&prog);
 
+	ck_assert_int_eq(0, program_parse_bytes(&prog, bs, strlen(bs)));
+	ck_loadimm2(&prog);
 	program_free(&prog);
 }
 END_TEST
@@ -142,6 +146,7 @@ suite_parser()
 		{ "parse_loadimm",        &parse_loadimm        },
 		{ "parse_loadimm2_no_nl", &parse_loadimm2_no_nl },
 		{ "parse_loadimm2_nl",    &parse_loadimm2_nl    },
+		{ "parse_loadimm2_nls",   &parse_loadimm2_nls   },
 	};
 
 	return tcase_build_suite("parser", tests, sizeof(tests));

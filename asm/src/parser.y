@@ -16,7 +16,9 @@
 	extern int yylex();
 	extern int yyparse();
 	void yyerror(const char *s);
+
 	struct yy_buffer_state* yy_scan_bytes(const char *, size_t);
+	void yy_delete_buffer(struct yy_buffer_state*);
 
 	static program_t prog;
 %}
@@ -157,9 +159,10 @@ program_parse_bytes(program_t *this, const void *bs, size_t len)
 	yydebug = (NULL == getenv("DEBUG")) ? 0 : 1;
 	line_no = 1;
 	program_init(&prog);
-	yy_scan_bytes(bs, len);
 
+	struct yy_buffer_state *buf = yy_scan_bytes(bs, len);
 	int ret = yyparse();
+	yy_delete_buffer(buf);
 
 	*this = prog;
 
