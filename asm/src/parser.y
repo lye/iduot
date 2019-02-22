@@ -164,7 +164,15 @@ program_parse_bytes(program_t *this, const void *bs, size_t len)
 	int ret = yyparse();
 	yy_delete_buffer(buf);
 
-	*this = prog;
+	if (ret == 0) {
+		*this = prog;
+	}
+	else if (ret == 1) {
+		ret = EDOOFUS;
+	}
+	else if (ret == 2) {
+		ret = ENOMEM;
+	}
 
 	return ret;
 }
