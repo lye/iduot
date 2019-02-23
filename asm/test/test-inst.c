@@ -79,6 +79,7 @@ START_TEST(encode_doc_loadi_a_4)
 		{
 			.type = INST_LOAD_IMM,
 			.load_imm = {
+				.reg = REG_IDS,
 				.imm = 4,
 			},
 		},

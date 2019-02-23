@@ -236,9 +236,9 @@ inst_reg2_encode(inst_reg2_t op, inst_enc_t *enc)
 void
 inst_load_imm_encode(inst_load_imm_t op, inst_enc_t *enc)
 {
-	// NB: Special-casing imm=0 (which is disallowed by the spec) to
-	// indicate this is the instruction half of the two-word instruction.
-	if (op.imm == 0) {
+	// NB: special-casing an invalid register to mean this is the
+	// data half of a two-word loadimm instruction.
+	if (REG_IDS != op.reg) {
 		inst_reg1_t op1 = {
 			.reg = op.reg,
 		};

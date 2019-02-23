@@ -13,7 +13,7 @@ ID    [a-zA-Z0-9_]+
 DIGIT [0-9]
 
 %%
-[ \t]*\n {
+[ \t]*(\n|\r\n) {
 	line_no += 1;
 	return T_NL;
 }
@@ -22,7 +22,7 @@ DIGIT [0-9]
 	return T_WS;
 }
 
-;.*\n {
+;.*(\n|\r\n) {
 	line_no += 1;
 	return T_NL;
 }

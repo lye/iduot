@@ -200,6 +200,10 @@ program_compile(const program_t *this, void *buf, size_t *buf_len)
 				this->insts[i].load_imm.label
 			);
 			if (NULL == label) {
+				printf(
+					"missing label definition %s\n",
+					this->insts[i].load_imm.label
+				);
 				return ENOENT;
 			}
 

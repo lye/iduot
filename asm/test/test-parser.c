@@ -235,6 +235,29 @@ START_TEST(parse_label_dupe)
 }
 END_TEST
 
+START_TEST(parse_load_imm_label)
+{
+	const char *bs = "loadimm A foo\nfoo:";
+	program_t prog;
+
+	program_init(&prog);
+	ck_assert_int_eq(0, program_parse_bytes(&prog, bs, strlen(bs)));
+	ck_assert_int_eq(2, prog.insts_len);
+
+	ck_assert_int_eq(INST_LOAD_IMM, prog.insts[0].type);
+	ck_assert_int_eq(REG_ID_A, prog.insts[0].load_imm.reg);
+	ck_assert_int_eq(0, prog.insts[0].load_imm.imm);
+	ck_assert_ptr_eq(NULL, prog.insts[0].load_imm.label);
+
+	ck_assert_int_eq(INST_LOAD_IMM, prog.insts[1].type);
+	ck_assert_int_eq(REG_IDS, prog.insts[1].load_imm.reg);
+	ck_assert_int_eq(0, prog.insts[1].load_imm.imm);
+	ck_assert_str_eq("foo", prog.insts[1].load_imm.label);
+
+	program_free(&prog);
+}
+END_TEST
+
 Suite*
 suite_parser()
 {
@@ -248,6 +271,7 @@ suite_parser()
 		{ "parse_mv",             &parse_mv             },
 		{ "parse_labels",         &parse_labels         },
 		{ "parse_label_dupe",     &parse_label_dupe     },
+		{ "parse_load_imm_label", &parse_load_imm_label },
 	};
 
 	return tcase_build_suite("parser", tests, sizeof(tests));

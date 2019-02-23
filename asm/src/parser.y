@@ -46,13 +46,14 @@
 %%
 
 program:
-	stmt stmtlist
-	| %empty
+	stmtlist
 	{}
 
 stmtlist:
-	T_NL stmt stmtlist
-	| T_NL
+	stmt
+	| stmt T_NL stmtlist
+	| T_NL stmtlist
+	| T_WS stmtlist
 	| %empty
 	{}
 
@@ -63,7 +64,6 @@ stmt:
 	| stmt_2
 	| stmt_dec
 	| stmt_label
-	| T_NL
 	{
 		// no-op; mods handled by indiv. statements.
 	}
@@ -77,7 +77,6 @@ stmt_dec:
 stmt_label:
 	T_LABEL
 	{
-		// TODO LABELS
 		if (0 != program_label_end(&prog, yylval.sval)) {
 			yyerror("duplicate label found");
 		}
@@ -102,7 +101,7 @@ stmt_li:
 	};
 
 stmt_li_label:
-	T_INSTR_LI T_WS T_REG T_WS T_LABEL
+	T_INSTR_LI T_WS T_REG T_WS T_ID
 	{
 		const char *label = program_label_ref(&prog, yylval.sval);
 		if (NULL == label) {
@@ -112,7 +111,7 @@ stmt_li_label:
 		inst_t i = {
 			.type = $1,
 			.load_imm = {
-				.reg = $3,
+				.reg   = $3,
 				.label = label,
 			},
 		};
