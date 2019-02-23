@@ -77,6 +77,9 @@ stmt_label:
 	T_LABEL
 	{
 		// TODO LABELS
+		if (0 != program_label_end(&prog, yylval.sval)) {
+			yyerror("duplicate label found");
+		}
 	}
 
 stmt_li:
@@ -180,5 +183,6 @@ program_parse_bytes(program_t *this, const void *bs, size_t len)
 void
 yyerror(const char *reason)
 {
-	printf("Parse error: %s, on line %d\n", reason, line_no);
+	// XXX: Probably want some way to report this but not for tests.
+	// Also error handling right now is very bad and I should feel bad.
 }

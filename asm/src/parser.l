@@ -33,6 +33,7 @@ DIGIT [0-9]
 }
 
 {ID}: {
+	yytext[strlen(yytext) - 1] = 0; // NB: remove the ':'
 	yylval.sval = yytext;
 	return T_LABEL;
 }

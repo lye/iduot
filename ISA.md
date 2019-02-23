@@ -46,7 +46,7 @@ The opcode table is as follows:
 | `1000`     | div            | 2x register, writes carry    | `dst = dst / src`, `carry = dst % src`               |
 | `1001`     | nand           | 2x register                  | `dst = !(dst & src)`                                 |
 | `1010`     | cmp            | 2x register, writes carry    | `carry = (dst == src) ? 0 : ((dst < src) ? 1 : 2)`   |
-| `1011`     | je             | 2x register, reads carry     | `if (carry == src) pc = dst`                         |
+| `1011`     | jce            | 2x register, reads carry     | `if (carry == src) pc = dst`                         |
 | `1100`     | mv             | 2x register                  | `dst = src`                                          |
 | `1101`     | signal         | 2x register                  | `dst = signal #`, `src = signal value`, `carry = task id` |
 | `1110`     | wait           | 2x register                  | `dst = signal #`, `src = signal value`, `carry = task id` |
@@ -229,7 +229,7 @@ Compares two register values, and stores a result in `CARRY`. The result will be
 | 1       | =        | 1       | 1       |
 | 2       | >        | 1       | 0       |
 
-#### `je val addr`
+#### `jce val addr`
 
 Compares the dst register with `CARRY` and, if equal, sets the `PC` to the src register value. This can be used to construct a good deal of jumping primitives. An unconditional jump can be implemented via `mv PC addr`. For example, `jle` can be implemented via:
 
@@ -240,7 +240,7 @@ Compares the dst register with `CARRY` and, if equal, sets the `PC` to the src r
 
   loadimm A 0x4
   cmp A B
-  je ZERO label
+  jce ZERO label
   mv PC addr
 label: 
 ```

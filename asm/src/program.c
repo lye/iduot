@@ -1,8 +1,10 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <strings.h>
+#include <string.h>
 #include <stdio.h>
 #include <errno.h>
+
 #include "program.h"
 #include "utils.h"
 
@@ -16,6 +18,12 @@ void
 program_free(program_t *this)
 {
 	free(this->insts);
+
+	for (size_t i = 0; i < this->labels_len; i += 1) {
+		free(this->labels[i].label);
+	}
+
+	free(this->labels);
 }
 
 void
@@ -81,4 +89,42 @@ program_compile(const program_t *this, void *buf, size_t *buf_len)
 	}
 
 	return 0;
+}
+
+int
+program_label_end(program_t *this, const char *name)
+{
+	if (0 <= program_label_find(this, name)) {
+		// XXX: error codes
+		return 1;
+	}
+
+	if (this->labels_len == this->labels_cap) {
+		this->labels_cap = this->labels_cap ? this->labels_cap * 2 : 8;
+		this->labels = realloc(
+			this->labels,
+			this->labels_cap * sizeof(label_t)
+		);
+		if (NULL == this->labels) {
+			return ENOMEM;
+		}
+	}
+
+	label_t *label = &this->labels[this->labels_len++];
+	label->off = this->insts_len;
+	label->label = strdup(name);
+	return 0;
+}
+
+ssize_t
+program_label_find(const program_t *this, const char *name)
+{
+	for (size_t i = 0; i < this->labels_len; i += 1) {
+		label_t *label = &this->labels[i];
+		if (0 == strcmp(name, label->label)) {
+			return label->off;
+		}
+	}
+
+	return -1;
 }

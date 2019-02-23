@@ -41,7 +41,7 @@ typedef enum {
 	INST_DIV,
 	INST_NAND,
 	INST_CMP,
-	INST_JE,
+	INST_JCE,
 	INST_MV,
 	INST_SIGNAL,
 	INST_WAIT,

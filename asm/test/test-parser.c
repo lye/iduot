@@ -138,6 +138,71 @@ START_TEST(parse_loadimm2_nls)
 }
 END_TEST
 
+START_TEST(parse_halt)
+{
+	const char *bs = "halt A";
+
+	program_t prog;
+	program_init(&prog);
+
+	ck_assert_int_eq(0, program_parse_bytes(&prog, bs, strlen(bs)));
+	ck_assert_int_eq(1, prog.insts_len);
+	ck_assert_int_eq(INST_HALT, prog.insts[0].type);
+	ck_assert_int_eq(REG_ID_A, prog.insts[0].reg1.reg);
+
+	program_free(&prog);
+}
+END_TEST
+
+START_TEST(parse_mv)
+{
+	const char *bs = "mv A B";
+
+	program_t prog;
+	program_init(&prog);
+
+	ck_assert_int_eq(0, program_parse_bytes(&prog, bs, strlen(bs)));
+	ck_assert_int_eq(1, prog.insts_len);
+	ck_assert_int_eq(INST_MV, prog.insts[0].type);
+	ck_assert_int_eq(REG_ID_A, prog.insts[0].reg2.reg1);
+	ck_assert_int_eq(REG_ID_B, prog.insts[0].reg2.reg2);
+
+	program_free(&prog);
+}
+END_TEST
+
+START_TEST(parse_labels)
+{
+	const char *bs =
+		"halt A\n"
+		"foo:\n"
+		"halt B\n"
+		"halt C\n"
+		"bar:\n"
+		"halt D";
+
+	program_t prog;
+	program_init(&prog);
+
+	ck_assert_int_eq(0, program_parse_bytes(&prog, bs, strlen(bs)));
+	ck_assert_int_eq(2, prog.labels_len);
+	ck_assert_int_eq(1, program_label_find(&prog, "foo"));
+	ck_assert_int_eq(3, program_label_find(&prog, "bar"));
+	ck_assert_int_eq(-1, program_label_find(&prog, "baz"));
+	program_free(&prog);
+}
+END_TEST
+
+START_TEST(parse_label_dupe)
+{
+	const char *bs = "foo: halt A\nfoo: halt B";
+	program_t prog;
+	program_init(&prog);
+	ck_assert_int_ne(0, program_parse_bytes(&prog, bs, strlen(bs)));
+	program_free(&prog);
+}
+END_TEST
+
 Suite*
 suite_parser()
 {
@@ -147,6 +212,10 @@ suite_parser()
 		{ "parse_loadimm2_no_nl", &parse_loadimm2_no_nl },
 		{ "parse_loadimm2_nl",    &parse_loadimm2_nl    },
 		{ "parse_loadimm2_nls",   &parse_loadimm2_nls   },
+		{ "parse_halt",           &parse_halt           },
+		{ "parse_mv",             &parse_mv             },
+		{ "parse_labels",         &parse_labels         },
+		{ "parse_label_dupe",     &parse_label_dupe     },
 	};
 
 	return tcase_build_suite("parser", tests, sizeof(tests));
