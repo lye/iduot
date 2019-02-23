@@ -104,7 +104,6 @@ inst_type_encode(inst_type_t type, inst_enc_t *val)
 		uint16_t opcode;
 	}
 	table[] = {
-		{ INST_LOAD_IMM,    4, 0b0000     },
 		{ INST_LOAD_MEM,    4, 0b0001     },
 		{ INST_STORE_MEM,   4, 0b0010     },
 		{ INST_LOAD_STK,    4, 0b0011     },
@@ -126,7 +125,8 @@ inst_type_encode(inst_type_t type, inst_enc_t *val)
 		{ INST_GETISEG,     8, 0b11110100 },
 		{ INST_SETISEG,     8, 0b11110101 },
 		{ INST_TASKID,      8, 0b11110110 },
-		// 0b11110111-0b11111110 are unused
+		{ INST_LOAD_IMM,    8, 0b11110111 },
+		// 0b11111000-0b11111110 are unused
 		{ INST_HALT,        8, 0b11111111 },
 	};
 	STATIC_ASSERT(
@@ -234,11 +234,18 @@ inst_reg2_encode(inst_reg2_t op, inst_enc_t *enc)
 void
 inst_load_imm_encode(inst_load_imm_t op, inst_enc_t *enc)
 {
-	assert(op.imm <= IDUOT_IMM_MAX);
-	assert(op.imm != 0);
+	// NB: Special-casing imm=0 (which is disallowed by the spec) to
+	// indicate this is the instruction half of the two-word instruction.
+	if (op.imm == 0) {
+		inst_reg1_t op1 = {
+			.reg = op.reg,
+		};
 
-	*enc |= reg_id_encode(op.reg) << IDUOT_IMM_BITS;
-	*enc |= op.imm;
+		inst_reg1_encode(op1, enc);
+	}
+	else {
+		*enc = op.imm;
+	}
 }
 
 inst_enc_t

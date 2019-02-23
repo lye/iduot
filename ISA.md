@@ -35,7 +35,7 @@ The opcode table is as follows:
 
 | Opcode     | Instruction    | Operands                     | Notes                                                |
 |------------|----------------|------------------------------|------------------------------------------------------|
-| `0000`     | loadimm        | register, 4-bit immediate    | `register = immediate`, immediate cannot be 0        |
+| `0000`     | invalid        | none                         | faults task                                          |
 | `0001`     | loadmem        | 2x register                  | `dst = *src` where src is on current RMEM segment    |
 | `0010`     | storemem       | 2x register                  | `*dst = src` where dst is on current WMEM segment    |
 | `0011`     | loadstk        | 2x register                  | `dst = *(sp - src)`                                  |
@@ -57,7 +57,7 @@ The opcode table is as follows:
 | `11110100` | getiseg        | 1x register                  | `reg = current instruction segment`                  |
 | `11110101` | setiseg        | 1x register                  | `current instruction segment = reg`; delayed 1 inst  |
 | `11110110` | taskid         | 1x register                  | `reg = current task id`                              |
-| `11110111` |                |                              |                                                      |
+| `11110111` | loadimm        | 1x register, following word  | `reg = following word`                               |
 | `11111000` |                |                              |                                                      |
 | `11111001` |                |                              |                                                      |
 | `11111010` |                |                              |                                                      |
@@ -74,20 +74,20 @@ XXX: There are a bunch of open 1-operand opcodes available. Possible ideas:
 
 ### Per-instruction notes
 
-#### `loadimm dst imm`
+#### `loadimm dst`
 
-`loadimm` is the load immediate instruction. It copies a 4-bit intermediate value encoded in the instruction into the provided register. As a special case, `0` is not allowed as the immediate; use the `ZERO` register instead. This allows the CPU to detect attempted execution of `NUL` bytes and fault the task.
+`loadimm` is the load immediate instruction. It's the only two-word instruction. It loads the word immediately following the instruction into the provided register, then advances `PC` by two words instead of one.
+
+As a special case, `loadimm 0` is disallowed by the assembler (but permitted by the vm). Just use the `ZERO` register instead.
 
 ```
 ; set A to 4
 loadimm A 4
+```
 
-; 4-bit immediate, so 15 is the largest number that can be encoded
-loadimm A 16 ; assembler error
-
-; 0 can be encoded, but is an invalid instruction
-loadimm A 0 ; fault
-mv A ZERO   ; works, but better is to just use ZERO directly
+```
+; zero out a register
+mv A ZERO
 ```
 
 #### `loadmem dst src`/`storemem dst src`

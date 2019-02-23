@@ -29,6 +29,35 @@ program_free(program_t *this)
 void
 program_push_inst(program_t *this, inst_t inst)
 {
+	// NB: This is a gross special-case. If we're inserting an INST_LOAD_IMM
+	// then put two instructions in -- one for the instruction, one for the
+	// immediate.
+	if (
+		INST_LOAD_IMM == inst.type
+		&& REG_IDS != inst.load_imm.reg
+		&& 0 != inst.load_imm.imm
+	) {
+		inst_t is[] = {
+			{
+				.type = INST_LOAD_IMM,
+				.load_imm = {
+					.reg = inst.load_imm.reg,
+				},
+			},
+			{
+				.type = INST_LOAD_IMM,
+				.load_imm = {
+					.reg = REG_IDS,
+					.imm = inst.load_imm.imm,
+				},
+			},
+		};
+
+		program_push_inst(this, is[0]);
+		program_push_inst(this, is[1]);
+		return;
+	}
+
 	if (this->insts_len == this->insts_cap) {
 		this->insts_cap = this->insts_cap ? this->insts_cap * 2 : 8;
 		this->insts = realloc(

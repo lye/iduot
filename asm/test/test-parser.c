@@ -60,17 +60,27 @@ START_TEST(parse_loadimm)
 	program_init(&prog);
 
 	ck_assert_int_eq(0, program_parse_bytes(&prog, bs, strlen(bs)));
-	ck_assert_int_eq(1, prog.insts_len);
+	ck_assert_int_eq(2, prog.insts_len);
 
-	inst_t expect = {
-		.type = INST_LOAD_IMM,
-		.load_imm = {
-			.reg = REG_ID_A,
-			.imm = 4,
-		}
+	inst_t expect[] = {
+		{
+			.type = INST_LOAD_IMM,
+			.load_imm = {
+				.reg = REG_ID_A,
+				.imm = 0,
+			},
+		},
+		{
+			.type = INST_LOAD_IMM,
+			.load_imm = {
+				.reg = REG_IDS,
+				.imm = 4,
+			},
+		},
 	};
 
-	ck_assert_inst_eq(&expect, &prog.insts[0]);
+	ck_assert_inst_eq(&expect[0], &prog.insts[0]);
+	ck_assert_inst_eq(&expect[1], &prog.insts[1]);
 
 	program_free(&prog);
 }
@@ -79,19 +89,41 @@ END_TEST
 static void
 ck_loadimm2(program_t *prog)
 {
-	inst_t expect = {
-		.type = INST_LOAD_IMM,
-		.load_imm = {
-			.reg = REG_ID_A,
-			.imm = 4,
+	inst_t expect[] = {
+		{
+			.type = INST_LOAD_IMM,
+			.load_imm = {
+				.reg = REG_ID_A,
+			},
+		},
+		{
+			.type = INST_LOAD_IMM,
+			.load_imm = {
+				.reg = REG_IDS,
+				.imm = 4,
+			},
+		},
+		{
+			.type = INST_LOAD_IMM,
+			.load_imm = {
+				.reg = REG_ID_B,
+			},
+		},
+		{
+			.type = INST_LOAD_IMM,
+			.load_imm = {
+				.reg = REG_IDS,
+				.imm = 2,
+			},
 		},
 	};
 
-	ck_assert_int_eq(2, prog->insts_len);
-	ck_assert_inst_eq(&expect, &prog->insts[0]);
-	expect.load_imm.reg = REG_ID_B;
-	expect.load_imm.imm = 2;
-	ck_assert_inst_eq(&expect, &prog->insts[1]);
+	ck_assert_int_eq(4, prog->insts_len);
+
+	ck_assert_inst_eq(&expect[0], &prog->insts[0]);
+	ck_assert_inst_eq(&expect[1], &prog->insts[1]);
+	ck_assert_inst_eq(&expect[2], &prog->insts[2]);
+	ck_assert_inst_eq(&expect[3], &prog->insts[3]);
 }
 
 START_TEST(parse_loadimm2_no_nl)

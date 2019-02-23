@@ -69,17 +69,28 @@ END_TEST
 
 START_TEST(encode_doc_loadi_a_4)
 {
-	inst_t inst = {
-		.type = INST_LOAD_IMM,
-		.load_imm = {
-			.reg = REG_ID_A,
-			.imm = 4,
+	inst_t insts[] = {
+		{
+			.type = INST_LOAD_IMM,
+			.load_imm = {
+				.reg = REG_ID_A,
+			},
+		},
+		{
+			.type = INST_LOAD_IMM,
+			.load_imm = {
+				.imm = 4,
+			},
 		},
 	};
 
 	ck_assert_int_eq(
-		inst_encode(inst),
-		0b000001100100
+		inst_encode(insts[0]),
+		0b111101110110
+	);
+	ck_assert_int_eq(
+		inst_encode(insts[1]),
+		0b000000000100
 	);
 }
 END_TEST
@@ -101,9 +112,20 @@ START_TEST(encode_doc_signal_a_3)
 }
 END_TEST
 
-START_TEST(const_imm_max)
+START_TEST(encode_load_mem)
 {
-	ck_assert_int_eq(0b1111, IDUOT_IMM_MAX);
+	inst_t inst = {
+		.type = INST_LOAD_MEM,
+		.reg2 = {
+			.reg1 = REG_ID_A,
+			.reg2 = REG_ID_B,
+		},
+	};
+
+	ck_assert_int_eq(
+		inst_encode(inst),
+		0b000101100111
+	);
 }
 END_TEST
 
@@ -117,7 +139,7 @@ suite_inst()
 		{ "encode_doc_halt_f",     &encode_doc_halt_f     },
 		{ "encode_doc_loadi_a_4",  &encode_doc_loadi_a_4  },
 		{ "encode_doc_signal_a_3", &encode_doc_signal_a_3 },
-		{ "const_imm_max",         &const_imm_max         },
+		{ "encode_load_mem",       &encode_load_mem       },
 	};
 
 	return tcase_build_suite("inst", tests, sizeof(tests));

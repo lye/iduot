@@ -9,7 +9,7 @@ static const uint16_t IDUOT_REG_BITS = 4;
 
 // IDUOT_IMM_MAX is the maximum immediate value for load immediate
 // instructions.
-static const uint16_t IDUOT_IMM_BITS = 4;
+static const uint16_t IDUOT_IMM_BITS = 12;
 static const uint16_t IDUOT_IMM_MAX = (1 << (IDUOT_IMM_BITS)) - 1;
 
 // inst_enc_t is an encoded instruction. For convenience, we're encoding to
@@ -122,11 +122,14 @@ inst_reg2_t;
 // inst_reg2_encode encodes the operands specified into the given instruction.
 void inst_reg2_encode(inst_reg2_t op, inst_enc_t *enc);
 
-// inst_load_imm_t is used for the INST_LOAD_IMM. The immediate value is
-// limited to 4 bits. This corresponds to INST_FORMAT_LOAD_IMM.
+// inst_load_imm_t is used for the INST_LOAD_IMM. This is a bit of a hack.
+// loadimm takes two words and is represented by two inst_t's -- the insertion
+// of the second one is handled by program_t during normal operation. We
+// disallow immediate 0's, so that's used as the marker for the first
+// instruction.
 typedef struct {
 	reg_id_t reg;
-	uint8_t imm;
+	uint16_t imm;
 }
 inst_load_imm_t;
 
