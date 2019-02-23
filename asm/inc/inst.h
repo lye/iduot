@@ -128,8 +128,9 @@ void inst_reg2_encode(inst_reg2_t op, inst_enc_t *enc);
 // disallow immediate 0's, so that's used as the marker for the first
 // instruction.
 typedef struct {
-	reg_id_t reg;
-	uint16_t imm;
+	reg_id_t    reg;
+	uint16_t    imm;
+	const char *label;
 }
 inst_load_imm_t;
 

@@ -1,4 +1,5 @@
 #include <sys/types.h>
+#include <sys/endian.h>
 #include <assert.h>
 #include <string.h>
 #include "inst.h"

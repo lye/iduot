@@ -2,8 +2,9 @@
 #include "inst.h"
 
 typedef struct {
-	size_t off;
-	char *label;
+	ssize_t off;
+	size_t  uses;
+	char   *label;
 }
 label_t;
 
@@ -36,6 +37,11 @@ int program_parse_file(program_t *this, const char *path);
 // program_parse_bytes parses a program from the specified buffer. It returns
 // 0 if no error, errno otherwise.
 int program_parse_bytes(program_t *this, const void *bs, size_t len);
+
+// program_label_ref stores the label name in the program and notes its
+// use. The use count isn't used for anything right now. The returned pointer
+// is owned by the program and can be used until the program is freed.
+const char* program_label_ref(program_t *this, const char *name);
 
 // program_label_end sets a label on the next instruction written. A label
 // is an arbitrary currently unique string that resolves to the position

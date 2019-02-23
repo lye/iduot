@@ -58,6 +58,7 @@ stmtlist:
 
 stmt:
 	stmt_li
+	| stmt_li_label
 	| stmt_1
 	| stmt_2
 	| stmt_dec
@@ -99,6 +100,25 @@ stmt_li:
 
 		program_push_inst(&prog, i);
 	};
+
+stmt_li_label:
+	T_INSTR_LI T_WS T_REG T_WS T_LABEL
+	{
+		const char *label = program_label_ref(&prog, yylval.sval);
+		if (NULL == label) {
+			yyerror("invalid label");
+		}
+
+		inst_t i = {
+			.type = $1,
+			.load_imm = {
+				.reg = $3,
+				.label = label,
+			},
+		};
+
+		program_push_inst(&prog, i);
+	}
 
 stmt_1:
 	T_INSTR_1 T_WS T_REG

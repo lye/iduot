@@ -137,14 +137,61 @@ START_TEST(push_load_imm)
 }
 END_TEST
 
+START_TEST(push_load_imm_label)
+{
+	// 0 loadimm A hello
+	//   hello:
+	// 2 NB: loadimm takes two words, so hello=2
+
+	inst_t inst = {
+		.type = INST_LOAD_IMM,
+		.load_imm = {
+			.reg   = REG_ID_A,
+			.label = "hello",
+		},
+	};
+
+	uint8_t bs[3];
+	size_t bs_len = sizeof(bs);
+
+	program_t prog;
+	program_init(&prog);
+	program_push_inst(&prog, inst);
+
+	ck_assert_int_eq(2, prog.insts_len);
+
+	ck_assert_int_eq(INST_LOAD_IMM, prog.insts[0].type);
+	ck_assert_int_eq(REG_ID_A, prog.insts[0].load_imm.reg);
+	ck_assert_int_eq(0, prog.insts[0].load_imm.imm);
+	ck_assert_ptr_eq(NULL, prog.insts[0].load_imm.label);
+
+	ck_assert_int_eq(INST_LOAD_IMM, prog.insts[1].type);
+	ck_assert_int_eq(REG_IDS, prog.insts[1].load_imm.reg);
+	ck_assert_int_eq(0, prog.insts[1].load_imm.imm);
+	ck_assert_str_eq("hello", prog.insts[1].load_imm.label);
+
+	ck_assert_int_eq(0, program_label_end(&prog, "hello"));
+	ck_assert_int_eq(0, program_compile(&prog, bs, &bs_len));
+
+	// 1111 0111 0110
+	// 0000 0000 0002
+	ck_assert_int_eq(0b11110111, bs[0]);
+	ck_assert_int_eq(0b01100000, bs[1]);
+	ck_assert_int_eq(0b00000010, bs[2]);
+
+	program_free(&prog);
+}
+END_TEST
+
 Suite*
 suite_program()
 {
 	tcase_t tests[] = {
-		{ "compile_one_inst",   &compile_one_inst   },
-		{ "compile_two_inst",   &compile_two_inst   },
-		{ "compile_three_inst", &compile_three_inst },
-		{ "push_load_imm",      &push_load_imm      },
+		{ "compile_one_inst",    &compile_one_inst    },
+		{ "compile_two_inst",    &compile_two_inst    },
+		{ "compile_three_inst",  &compile_three_inst  },
+		{ "push_load_imm",       &push_load_imm       },
+		{ "push_load_imm_label", &push_load_imm_label },
 	};
 
 	return tcase_build_suite("program", tests, sizeof(tests));
