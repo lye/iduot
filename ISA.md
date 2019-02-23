@@ -52,7 +52,7 @@ The opcode table is as follows:
 | `1110`     | wait           | 2x register                  | `dst = signal #`, `src = signal value`, `carry = task id` |
 | `11110000` | alloc          | 1x register                  | `reg = new memory segment`                           |
 | `11110001` | free           | 1x register                  | `reg = old memory segment`                           |
-| `11110010` | fork           | 1x register                  | `reg = parent ? child segment : 0`                   |
+| `11110010` | fork           | 1x register                  | `reg = parent ? child task id: 0`                   |
 | `11110011` | waitfor        | 1x register                  | `reg = task id to filter next wait call`             |
 | `11110100` | getiseg        | 1x register                  | `reg = current instruction segment`                  |
 | `11110101` | setiseg        | 1x register                  | `current instruction segment = reg`; delayed 1 inst  |
