@@ -35,7 +35,7 @@ The opcode table is as follows:
 
 | Opcode     | Instruction    | Operands                     | Notes                                                |
 |------------|----------------|------------------------------|------------------------------------------------------|
-| `0000`     | invalid        | none                         | faults task                                          |
+| `0000`     | mv             | 2x register                  | `dst = src`, `mv PC PC` faults                       |
 | `0001`     | loadmem        | 2x register                  | `dst = *src` where src is on current RMEM segment    |
 | `0010`     | storemem       | 2x register                  | `*dst = src` where dst is on current WMEM segment    |
 | `0011`     | loadstk        | 2x register                  | `dst = *(sp - src)`                                  |
@@ -47,7 +47,7 @@ The opcode table is as follows:
 | `1001`     | nand           | 2x register                  | `dst = !(dst & src)`                                 |
 | `1010`     | cmp            | 2x register, writes carry    | `carry = (dst == src) ? 0 : ((dst < src) ? 1 : 2)`   |
 | `1011`     | jce            | 2x register, reads carry     | `if (carry == src) pc = dst`                         |
-| `1100`     | mv             | 2x register                  | `dst = src`                                          |
+| `1100`     |                |                              |                                                      |
 | `1101`     | signal         | 2x register                  | `dst = signal #`, `src = signal value`, `carry = task id` |
 | `1110`     | wait           | 2x register                  | `dst = signal #`, `src = signal value`, `carry = task id` |
 | `11110000` | alloc          | 1x register                  | `reg = new memory segment`                           |
@@ -248,6 +248,8 @@ label:
 #### `mv dst src`
 
 `mv` copies one register value to another register. It might be removed at some point, since the behavior can be replicated with load/store pairs, but it feels like that might bloat executable size too much. So it's provided for now to hopefully make executables small enough to fit in single segments.
+
+As a special case, `mv PC PC` (e.g. a NUL instruction) is not allowed. Attempting to execute a NUL instruction will fault the task.
 
 #### `signal src_no src_value` / `wait dst_no dst_value` / `waitfor task`
 

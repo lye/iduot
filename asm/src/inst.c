@@ -104,6 +104,7 @@ inst_type_encode(inst_type_t type, inst_enc_t *val)
 		uint16_t opcode;
 	}
 	table[] = {
+		{ INST_MV,          4, 0b0000     },
 		{ INST_LOAD_MEM,    4, 0b0001     },
 		{ INST_STORE_MEM,   4, 0b0010     },
 		{ INST_LOAD_STK,    4, 0b0011     },
@@ -115,7 +116,7 @@ inst_type_encode(inst_type_t type, inst_enc_t *val)
 		{ INST_NAND,        4, 0b1001     },
 		{ INST_CMP,         4, 0b1010     },
 		{ INST_JCE,         4, 0b1011     },
-		{ INST_MV,          4, 0b1100     },
+		// 0b1010 unused
 		{ INST_SIGNAL,      4, 0b1101     },
 		{ INST_WAIT,        4, 0b1110     },
 		{ INST_ALLOC,       8, 0b11110000 },
